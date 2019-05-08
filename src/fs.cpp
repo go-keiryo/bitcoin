@@ -3,6 +3,9 @@
 #ifndef WIN32
 #include <fcntl.h>
 #else
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
 #include <codecvt>
 #include <windows.h>
 #endif
@@ -89,7 +92,7 @@ bool FileLock::TryLock()
         return false;
     }
     _OVERLAPPED overlapped = {0};
-    if (!LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY, 0, 0, 0, &overlapped)) {
+    if (!LockFileEx(hFile, LOCKFILE_EXCLUSIVE_LOCK | LOCKFILE_FAIL_IMMEDIATELY, 0, std::numeric_limits<DWORD>::max(), std::numeric_limits<DWORD>::max(), &overlapped)) {
         reason = GetErrorReason();
         return false;
     }
@@ -159,6 +162,7 @@ static std::string openmodeToStr(std::ios_base::openmode mode)
 void ifstream::open(const fs::path& p, std::ios_base::openmode mode)
 {
     close();
+    mode |= std::ios_base::in;
     m_file = fsbridge::fopen(p, openmodeToStr(mode).c_str());
     if (m_file == nullptr) {
         return;
@@ -182,6 +186,7 @@ void ifstream::close()
 void ofstream::open(const fs::path& p, std::ios_base::openmode mode)
 {
     close();
+    mode |= std::ios_base::out;
     m_file = fsbridge::fopen(p, openmodeToStr(mode).c_str());
     if (m_file == nullptr) {
         return;

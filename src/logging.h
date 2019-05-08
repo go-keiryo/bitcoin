@@ -19,6 +19,7 @@
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
+static const bool DEFAULT_LOGTHREADNAMES = false;
 extern const char * const DEFAULT_DEBUGLOGFILE;
 
 extern bool fLogIPs;
@@ -81,6 +82,7 @@ namespace BCLog {
 
         bool m_log_timestamps = DEFAULT_LOGTIMESTAMPS;
         bool m_log_time_micros = DEFAULT_LOGTIMEMICROS;
+        bool m_log_threadnames = DEFAULT_LOGTHREADNAMES;
 
         fs::path m_file_path;
         std::atomic<bool> m_reopen_file{false};
@@ -108,12 +110,12 @@ namespace BCLog {
 
 } // namespace BCLog
 
-extern BCLog::Logger* const g_logger;
+BCLog::Logger& LogInstance();
 
 /** Return true if log accepts specified category */
 static inline bool LogAcceptCategory(BCLog::LogFlags category)
 {
-    return g_logger->WillLogCategory(category);
+    return LogInstance().WillLogCategory(category);
 }
 
 /** Returns a string with the log categories. */
@@ -132,7 +134,7 @@ bool GetLogCategory(BCLog::LogFlags& flag, const std::string& str);
 template <typename... Args>
 static inline void LogPrintf(const char* fmt, const Args&... args)
 {
-    if (g_logger->Enabled()) {
+    if (LogInstance().Enabled()) {
         std::string log_msg;
         try {
             log_msg = tfm::format(fmt, args...);
@@ -140,7 +142,7 @@ static inline void LogPrintf(const char* fmt, const Args&... args)
             /* Original format string will have newline so don't add one here */
             log_msg = "Error \"" + std::string(fmterr.what()) + "\" while formatting log message: " + fmt;
         }
-        g_logger->LogPrintStr(log_msg);
+        LogInstance().LogPrintStr(log_msg);
     }
 }
 
